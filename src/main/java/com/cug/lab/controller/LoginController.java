@@ -23,6 +23,7 @@ import org.springframework.ui.Model;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 
@@ -63,10 +64,11 @@ public class LoginController {
         } else {//登录成功
             servletRequest.setAttribute(Constants.CURRENT_USER, userService.findByUsername(user.getUsername()));
             Set<String> set = userService.findRoles(user.getUsername());
-            System.out.println(set);
             List<SysRole> roleList = roleService.findListByName(set);
+
             Set<String> permissions = userService.findPermissions(user.getUsername());
-            List<SysResource> menus = resourceService.findMenus(permissions);
+
+            Map<String , List<SysResource>>  menus = resourceService.findMenus(permissions);
             model.addAttribute("roles", roleList);
             model.addAttribute("menus", menus);
             return "homepage";
@@ -74,7 +76,10 @@ public class LoginController {
     }
 
 
-
+    @RequestMapping("/welcome")
+    public static String welcome(){
+        return "welcome";
+    }
 
     @RequestMapping("/unauthorized")
     public static String unauthorized(){

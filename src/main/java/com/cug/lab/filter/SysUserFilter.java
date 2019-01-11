@@ -26,7 +26,6 @@ public class SysUserFilter extends PathMatchingFilter {
     protected boolean onPreHandle(ServletRequest request, ServletResponse response, Object mappedValue) throws Exception {
         String username = (String) SecurityUtils.getSubject().getPrincipal();
         request.setAttribute(Constants.CURRENT_USER, userService.findByUsername(username));
-        System.out.println("调用了用户过滤器");
         return true;
     }
 }

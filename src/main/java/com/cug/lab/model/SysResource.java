@@ -16,7 +16,7 @@ public class SysResource implements Serializable {
     private Boolean available = Boolean.FALSE;
 
     public static enum ResourceType {
-        menu("菜单"), button("按钮");
+        menu("菜单"),page("页面"), button("按钮");
         private final String info;
         private ResourceType(String info) {
             this.info = info;
@@ -122,6 +122,7 @@ public class SysResource implements Serializable {
                 "id=" + id +
                 ", name='" + name + '\'' +
                 ", type=" + type +
+                ", url="+ url +
                 ", permission='" + permission + '\'' +
                 ", parentId=" + parentId +
                 ", parentIds='" + parentIds + '\'' +

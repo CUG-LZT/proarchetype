@@ -56,7 +56,6 @@ public class UserRealm extends AuthorizingRealm {
                 ByteSource.Util.bytes(user.getCredentialsSalt()),//salt=username+salt
                 getName()  //realm name
         );
-        System.out.println("调用了获取用户");
         return authenticationInfo;
     }
 }

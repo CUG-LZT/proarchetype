@@ -8,10 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * <p>User: Zhang Kaitao
@@ -62,26 +59,43 @@ public class ResourceServiceImpl implements ResourceService {
         return permissions;
     }
 
+    /* 查询所有的资源权限 */
     @Override
-    public List<SysResource> findMenus(Set<String> permissions) {
+    public Map<String , List<SysResource>> findMenus(Set<String> permissions) {
+        Map<String , List<SysResource>> map = new HashMap<String , List<SysResource>>();
         List<SysResource> allResources = findAll();
         List<SysResource> menus = new ArrayList<SysResource>();
+        List<SysResource> pages = new ArrayList<SysResource>();
         for(SysResource resource : allResources) {
             if(resource.isRootNode()) {
                 continue;
             }
-            if(resource.getType() != SysResource.ResourceType.menu) {
+            if(resource.getType().equals(SysResource.ResourceType.button)) {
                 continue;
             }
-            if(!hasPermission(permissions, resource)) {
-                continue;
+            if(resource.getType().equals(SysResource.ResourceType.page)) {
+                if(!hasPermission(permissions, resource)) {
+                    continue;
+                }
+                pages.add(resource);
             }
-            menus.add(resource);
+            if(resource.getType().equals(SysResource.ResourceType.menu)){
+                if(!hasPermission(permissions, resource)) {
+                    continue;
+                }
+                menus.add(resource);
+            }
+
         }
-        return menus;
+        System.out.println(pages);
+        map.put("menus",menus);
+        map.put("pages",pages);
+        return map;
     }
 
+    //传过来的permissions就是用户获得的所有的
     private boolean hasPermission(Set<String> permissions, SysResource resource) {
+        //为空返回真
         if(StringUtils.isEmpty(resource.getPermission())) {
             return true;
         }

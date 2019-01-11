@@ -116,11 +116,14 @@
         </property>
         <property name="filterChainDefinitions">
             <value>
+                <!--加载静态资源-->
+                /static/** = anon
                 /login = anon
                 /logout = logout
                 /authenticated = anon
                 <!--所有的请求都要经过验证和满足自定的过滤器-->
-                /** = user,sysUser
+                <!-- /** = user,sysUser-->
+                /** = authc,sysUser
             </value>
         </property>
     </bean>

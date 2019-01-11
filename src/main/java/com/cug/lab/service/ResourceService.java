@@ -2,6 +2,7 @@ package com.cug.lab.service;
 
 import com.cug.lab.model.SysResource;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -31,5 +32,5 @@ public interface ResourceService {
      * @param permissions
      * @return
      */
-    List<SysResource> findMenus(Set<String> permissions);
+    Map<String , List<SysResource>> findMenus(Set<String> permissions);
 }

@@ -41,7 +41,6 @@ public class RetryLimitHashedCredentialsMatcher extends HashedCredentialsMatcher
         SysUser user = userService.findByUsername(username);
         user.setPassword(password);
         passwordHelper.decryptPassword(user);
-        System.out.println("调用了密码验证器");
         return this.equals(user.getPassword(), dbPassword);
 
     }

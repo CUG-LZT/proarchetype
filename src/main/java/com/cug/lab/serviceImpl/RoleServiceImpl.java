@@ -40,7 +40,6 @@ public class RoleServiceImpl implements RoleService {
 
     @Override
     public List<SysRole> findListByName(Set<String> set) {
-        System.out.println("roleservice -> " + set);
         return roleDao.findListByName(set);
     }
 

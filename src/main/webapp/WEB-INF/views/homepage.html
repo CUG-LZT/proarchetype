@@ -1,33 +1,97 @@
-<!DOCTYPE html>
 <html>
 <head>
-    <title>Hello</title>
+    <meta charset="utf-8">
+    <title>后台管理</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
+
+    <link href="static/InsdepUI/insdep.easyui.min.css" rel="stylesheet" type="text/css">
+    <link href="static/InsdepUI/icon.css" rel="stylesheet" type="text/css">
+    <link href="static/css/homepage.css" rel="stylesheet" type="text/css">
+    <script type="text/javascript" src="static/InsdepUI/jquery.min.js"></script>
+    <script type="text/javascript" src="static/InsdepUI/jquery.easyui.min.js"></script>
+    <script type="text/javascript" src="static/InsdepUI/insdep.extend.min.js"></script>
+    <script type="text/javascript" src="static/js/homepage.js"></script>
 </head>
+<body style="width: 100%; height: 100%;">
+<div  class="easyui-layout" style="width: 100%; height: 100%;">
+    <div data-options="region:'north'"
+         style="width: 100%; height: 40px; background-color: rgb(32, 34, 42); border-bottom: 1px solid rgb(57, 61, 73);"
+         border="false">
+        <div style="width: 40%; height: 100%; float: left;">
+            <img style="float: left; height: 26px; width: 26px; padding-left: 38px; padding-top: 7px"
+                 src="static/image/ice.png" alt="logo" />
 
-<body>
+            <p style="padding-left: 70px; padding-top: 5px; color: white; font-size: 20px; color: rgb(0, 125, 220); font-weight: 900;">
+                <span>冷库数据管理平台</span>
+            <p>
+        </div>
 
-<div class="error">欢迎 ：[ ${(user.username)!''} ]</div>
-<div class="error">角色 ：[ <#if roles??> <#list roles as role>${(role.description)!''} </#list></#if> ]</div>
-<a href="logout">[退出]</a>
-<hr/>
+        <div style="float: left; width: 40%; height: 100%; float: right; font-size: 14px;">
+            <p style="float: right; padding-right: 20px; padding-top: 10px; color: #bfbfbf;">
+                <span>用户</span>：${(user.username)!''}&nbsp;&nbsp;|&nbsp;
+                <span>角色</span>：<#if roles??> <#list roles as role>${(role.description)!''} </#list></#if>
+                &nbsp;&nbsp;|&nbsp;
+                <a style="font-size:14px; color:#bfbfbf;"  href="logout">退出登录</a>
+            <p>
+        </div>
+    </div>
+    <div id="myfooter" data-options="region:'south',split:false"
+         style="height: 25px; background-color: rgb(57, 61, 73); text-align: center"
+         border="false">Powered by 湖北省电子科学研究所有限公司</div>
 
-<div class="error">menus ： </div>
+    <div data-options="region:'west',split:false,iconCls:'icon-blank',"
+         title="系统管理" style="width: 180px" border="false">
+        <div id="accordion" class="easyui-accordion accordion-lists"
+             style="width: 100%; height: 100%;" border="false">
+            <#if menus??>
+            <#list menus["menus"] as menu>
+                <div title="${menu.name}" data-options="iconCls:'icon-count'">
+                    <ul>
+                        <#list menus["pages"] as page>
+                            <#if page.parentId = menu.id>
+                                <li><a href="#" data="${page.url}"
+                                       class="easyui-linkbutton c1"
+                                       data-options="plain:true,iconCls:'icon-adminsearch',toggle:true,group:'g1'"
+                                       style="width: 100%; text-align: left; padding-left: 20px">${page.name}</a>
+                                </li>
+                            </#if>
+                        </#list>
+                    </ul>
+                </div>
+            </#list>
+            </#if>
+        </div>
+    </div>
 
-    <#if menus??>
-        <#list menus as menu>
+    <div data-options="region:'center',iconCls:'icon-ok'" border="false"
+         style="padding: 1px">
+        <div id="tabs" class="easyui-tabs tabs-block  tab-color-blue   "
+             data-options="plain:true,border:false"
+             style="width: 100%; height: 100%">
+            <div title="主页">
+                <iframe src="welcome"
+                        style="width: 100%; height: 100%; border: none;" scrolling="no"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
 
-        <a href="${(menu.url)!''}" >${menu.name}</a> <br/>
 
-        </#list>
-    </#if>
-
-
-
-<hr/>
-
-
-
-<a href="admin" >admin</a><br>
-<a href="user" >user</a>
+<div id="mm" class="easyui-menu" style="width: 150px;">
+    <div id="mm-tabupdate">刷新</div>
+    <div class="menu-sep"></div>
+    <div id="mm-tabclose">关闭</div>
+    <div id="mm-tabcloseall">全部关闭</div>
+    <div id="mm-tabcloseother">除此之外全部关闭</div>
+    <div class="menu-sep"></div>
+    <div id="mm-tabcloseright">关闭当前右侧全部</div>
+    <div id="mm-tabcloseleft">关闭当前左侧全部</div>
+    <div class="menu-sep"></div>
+    <div id="mm-exit">退出</div>
+</div>
 </body>
 </html>
