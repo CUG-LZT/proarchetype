@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	   xmlns:aop="http://www.springframework.org/schema/aop"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xmlns:mvc="http://www.springframework.org/schema/mvc"
+		xmlns:context="http://www.springframework.org/schema/context"
+		xsi:schemaLocation="
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+		http://www.springframework.org/schema/context
+		http://www.springframework.org/schema/context/spring-context-3.2.xsd
+		http://www.springframework.org/schema/mvc
+		http://www.springframework.org/schema/mvc/spring-mvc-3.2.xsd
+		http://www.springframework.org/schema/aop
+ 		http://www.springframework.org/schema/aop/spring-aop.xsd">
+
+
+	<!-- 开启controller注解支持 -->
+	<!-- 扫描所有的controller 但是不扫描service 避免扫描框架自带的包 -->
+	<context:component-scan base-package="com.cug.lab" use-default-filters="false">
+		<context:include-filter type="annotation"
+								expression="org.springframework.stereotype.Controller" />
+		<context:include-filter type="annotation"
+								expression="org.springframework.web.bind.annotation.ControllerAdvice"/>
+		<context:exclude-filter type="annotation"
+								expression="org.springframework.stereotype.Service" />
+	</context:component-scan>
+
+	<bean id="lifecycleBeanPostProcessor" class="org.apache.shiro.spring.LifecycleBeanPostProcessor"/>
+
+	<!--启用Spring IOC容器Shiro注解，但必须配置了lifecycleBeanPostProcessor后才可以使用-->
+	<bean class="org.springframework.aop.framework.autoproxy.DefaultAdvisorAutoProxyCreator"
+		  depends-on="lifecycleBeanPostProcessor" />
+
+	<aop:config proxy-target-class="true"></aop:config>
+	<bean class="org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSourceAdvisor">
+		<property name="securityManager" ref="securityManager"/>
+	</bean>
+
+
+ 	<!-- 同时也开启了json格式的支持,
+ 		 当controller中返回的是bean或者是其他java对象的时候，自动将其转化为json对象
+ 		 需要在controller方法上加上@ResponseBody
+	-->
+ 	<mvc:annotation-driven>
+		<!--??????????????????????-->
+		<mvc:argument-resolvers>
+			<bean class="com.cug.lab.web.method.CurrentUserMethodArgumentResolver"/>
+		</mvc:argument-resolvers>
+	</mvc:annotation-driven>
+
+
+	<!-- 当在web.xml 中   DispatcherServlet使用 <url-pattern>/</url-pattern> 映射时，能映射静态资源 -->
+	<mvc:default-servlet-handler/>
+
+	<!-- 因为在springmvc的配置文件中，将拦截规则由*.action 改为了/ 所以，
+		 静态资源也会被拦截，需要在这里配置 对静态资源放行
+	-->
+	<mvc:resources mapping="/static/**" location="/WEB-INF/static/"/>
+
+
+	<!--视图解析器-->
+	<bean id="viewResolver" class="org.springframework.web.servlet.view.freemarker.FreeMarkerViewResolver">
+		<property name="prefix" value="/WEB-INF/views/"/>
+		<property name="suffix" value=".html"/>
+		<property name="cache" value="true"/>
+		<property name="contentType" value="text/html;charset=UTF-8"/>
+	</bean>
+
+
+	<!-- 控制器异常处理 -->
+	<bean id="exceptionHandlerExceptionResolver"
+		  class="org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver">
+	</bean>
+	<!--引入自定义异常-->
+	<bean class="com.cug.lab.exception.DefaultExceptionHandler"/>
+
+
+
+	<!-- **************************freemarker的配置************************** -->
+	<bean id="freemarkerConfig"
+		  class="org.springframework.web.servlet.view.freemarker.FreeMarkerConfigurer">
+		<property name="templateLoaderPath" value=""/> <!-- /WEB-INF/ftl/ -->
+		<property name="freemarkerSettings">
+			<props>
+				<prop key="tag_syntax">auto_detect</prop>
+				<!-- 检查模板更新时间间隔 默认5s -->
+				<prop key="template_update_delay">1</prop>
+				<prop key="defaultEncoding">UTF-8</prop>
+				<prop key="url_escaping_charset">UTF-8</prop>
+				<prop key="locale">zh_CN</prop>
+				<prop key="boolean_format">true,false</prop>
+				<!-- 设置日期格式 -->
+				<prop key="date_format">yyyy-MM-dd</prop>
+				<prop key="datetime_format">yyyy-MM-dd HH:mm:ss</prop>
+				<prop key="time_format">HH:mm:ss</prop>
+				<prop key="number_format">0.######</prop>
+				<!--去掉多余的空格-->
+				<prop key="whitespace_stripping">true</prop>
+				<!-- 指定加载哪一个目录路径下的ftl文件 -->
+				<prop key="auto_import">/WEB-INF/ftl/spring.ftl as s</prop>
+			</props>
+		</property>
+	<!--	<property name="freemarkerVariables">
+			<map>
+				&lt;!&ndash; sortSalaryDirectiveModel &ndash;&gt;
+				<entry key="sortSalaryDirec" value-ref="sortSalaryDirectiveModel"/>
+			</map>
+		</property>-->
+	</bean>
+
+</beans>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+
+	<typeAliases>
+		<!-- 通过package, 可以直接指定package的名字， mybatis会自动扫描你指定包下面的javabean,
+      		  并且默认设置一个别名，默认的名字为简单类名来作为它的别名。
+      		  
+      		  一般用在mapper.xml文件中的参数类型的名称，这时候就不需要用全类名，直接用简单类名就可以了
+      	-->
+		<package name = "com.cug.lab.model"/>
+	</typeAliases>
+</configuration>

@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans
+	xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:context="http://www.springframework.org/schema/context"
+
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+	http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+	http://www.springframework.org/schema/context 
+	http://www.springframework.org/schema/context/spring-context-3.2.xsd
+	http://www.springframework.org/schema/tx 
+	http://www.springframework.org/schema/tx/spring-tx-3.2.xsd
+	http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.2.xsd">
+
+
+
+
+	<!-- **************************自动扫描******************************** -->
+	<!-- 自动扫描组件，要把controller去除，他们是在spring-mvc.xml中配置，如果不去除会影响事务管理。
+		 和上面的比较在扫描包的同时去掉Controller然后在springmvc配置文件中只扫描Controller，避免扫描自己所带的包内容
+	 -->
+	<context:component-scan base-package="com.cug.lab">
+		<context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller" />
+	</context:component-scan>
+
+	<!-- **************************自动扫描结束***************************** -->
+
+	<!-- 开启AOP监听 只对当前配置文件有效 -->
+	<aop:aspectj-autoproxy expose-proxy="true"/>
+
+
+	<!-- ***********************数据源配置********************** -->
+	
+	<!-- 配置数据源，记得去掉myBatis-config.xml的数据源相关配置 -->
+	<bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource" init-method="init" destroy-method="close">
+		<property name="driverClassName" value="com.mysql.jdbc.Driver" />
+		<property name="url" value="jdbc:mysql://localhost:3306/pro-archetype?useUnicode=true&amp;characterEncoding=UTF-8" />
+		<property name="username" value="root" />
+		<property name="password" value="123456" />
+		<!-- 配置初始化大小、最小、最大 -->
+		<property name="initialSize" value="10" />
+		<property name="minIdle" value="10" />
+		<property name="maxActive" value="50" />
+		<!-- 配置获取连接等待超时的时间 -->
+		<property name="maxWait" value="60000" />
+		<!-- 配置间隔多久才进行一次检测，检测需要关闭的空闲连接，单位是毫秒 -->
+		<property name="timeBetweenEvictionRunsMillis" value="60000" />
+		<!-- 配置一个连接在池中最小生存的时间，单位是毫秒 -->
+		<property name="minEvictableIdleTimeMillis" value="300000" />
+
+		<property name="validationQuery" value="SELECT 'X'" />
+		<property name="testWhileIdle" value="true" />
+		<property name="testOnBorrow" value="false" />
+		<property name="testOnReturn" value="false" />
+		<!-- 打开PSCache，并且指定每个连接上PSCache的大小  如果用Oracle，则把poolPreparedStatements配置为true，mysql可以配置为false。-->
+	<!--	<property name="poolPreparedStatements" value="false" />
+		<property name="maxPoolPreparedStatementPerConnectionSize" value="20" />-->
+		<!-- 配置监控统计拦截的filters -->
+		<property name="filters" value="stat,wall" />
+	</bean>
+
+
+
+	<!-- *********************数据源配置结束********************** -->
+	
+	
+	
+	<!-- **************************事务相关配置************************** -->
+	
+	<!-- 配置事务管理器,管理数据源事务处理 jdbc的事务管理器-->
+	<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+	
+	<!--========================================
+		下面接连的两个配置都是采用的基于aspectj的声明式事务管理
+		可以将下面的两个配置去掉换为
+			开启注解事务
+			<tx:annotation-driver transaction-manager="transactionManager" />
+			然后再业务层的类名上加上注解@Transactional,参数中可以设置传播行为，隔离级别等属性
+			@Transactional 可以作用于接口、接口方法、类以及类方法上。
+			当作用于类上时，该类的所有 public 方法将都具有该类型的事务属性，同时，我们也可以在方法级别使用该标注来覆盖类级别的定义。
+		两者的效果是一样的，都能进行事务的管理
+	==========================================-->
+	
+	<!-- 配置事务通知（增强或者叫做通知） -->
+	<!-- 默认只处理运行时异常，可加rollback-for="Exception/Throwable"等处理所有异常或包括错误,rollback-for后面是异常类型
+		  如果没有rollback-for="Exception"的话只会回滚运行时异常；try catch中的异常就不会回滚。
+		  有些异常是不能进行事物的回滚的，例如在业务层逻辑有问题，但是数据依然写进数据库等需要回滚的事物
+		  
+		propagation: 事务的传播行为
+		isolation： 事务的隔离级别
+		resd-only: 只读
+		rollback-for： 发生哪些异常回滚
+		no-rollback-for: 发生哪些异常不回滚
+		timeout：过期信息 
+	-->
+	<tx:advice id="advice" transaction-manager="transactionManager">
+		<tx:attributes>
+			<tx:method name="insert*" propagation="REQUIRED" rollback-for="Exception"/>
+			<tx:method name="update*" propagation="REQUIRED" rollback-for="Exception"/>
+			<tx:method name="delete*" propagation="REQUIRED" rollback-for="Exception"/>
+			<tx:method name="*" propagation="SUPPORTS"/>
+		</tx:attributes>
+	</tx:advice>
+	
+	<!-- 配置切面织入的范围,后边要把事务边界定在service层 -->
+	<aop:config>
+		<!--配置切面 ；在这个切面用的是pointcut切入点，在这个切面都会用advice这个事务的管理通知-->
+		<aop:advisor advice-ref="advice" pointcut="execution(* com.cug.lab.serviceImpl.*.*(..))"/>
+	</aop:config>
+	
+	<!-- **************************事务相关配置结束************************** -->
+	
+	
+	
+
+	
+	<!-- **************************mybatis配置**************************** -->
+	
+	<!-- 配置session工厂 -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+		<property name="configLocation" value="classpath:myBatis-config.xml" />
+		<!--配置扫描式加载SQL映射文件,记得去掉mybatis-config配置(每加一个bean就需要生成一个xml文件，然后在把xml文件加入到mybatis文件中)-->
+		<!--如果xml文件是放在entity下面，那么直需要把value中的值改掉就好了-->
+		<property name="mapperLocations" value="classpath:mapper/*.xml"/>
+	</bean>
+
+	<!--
+		 扫描basePackage下面的接口类，找到下面每一个类的全类名。
+		 和mapping.xml的命名空间去比较，如果发现有一样的，
+		spring会生成这个接口的代理对象，会用@Autowired方式注入（在service层），就不用再写实现类了
+		 相当于之前的有实现类的写法，把用接口的全类名做命名空间，用接口中的方法名作为sql语句的id来找到一条具体的sql
+	-->
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<property name="sqlSessionFactory" ref="sqlSessionFactory"/>
+		<property name="basePackage" value="com.cug.lab.dao"/>
+	</bean>
+
+
+	<!-- druid -->
+	<bean id="stat-filter" class="com.alibaba.druid.filter.stat.StatFilter">
+		<property name="slowSqlMillis" value="3000" />
+		<property name="logSlowSql" value="true" />
+		<property name="mergeSql" value="true" />
+	</bean>
+	<bean id="wall-filter" class="com.alibaba.druid.wall.WallFilter">
+		<property name="dbType" value="mysql" />
+	</bean>
+	
+	<!-- **************************mybatis配置结束************************** -->
+
+
+
+
+
+	<import resource="classpath:spring-config-shiro.xml"/>
+
+
+
+</beans>

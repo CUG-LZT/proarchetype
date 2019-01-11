@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="
+       http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd
+       http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd">
+
+
+
+
+    <!-- 自定义凭证匹配器 -->
+    <bean id="credentialsMatcher" class="com.cug.lab.credentials.RetryLimitHashedCredentialsMatcher">
+        <!--密码加密算法 迭代次数-->
+        <property name="hashAlgorithmName" value="md5"/>
+        <property name="hashIterations" value="2"/>
+        <property name="storedCredentialsHexEncoded" value="true"/>
+    </bean>
+
+    <!-- 自定义Realm实现 -->
+    <bean id="userRealm" class="com.cug.lab.realm.UserRealm">
+        <!-- 设置自定义凭证匹配器 -->
+        <property name="credentialsMatcher" ref="credentialsMatcher"/>
+        <!--禁用掉了cache-->
+        <property name="cachingEnabled" value="false"/>
+    </bean>
+
+<!--========================================================================================-->
+
+    <!-- 会话ID生成器 -->
+    <!-- 用于生成会话ID，默认就是JavaUuidSessionIdGenerator，使用java.util.UUID生成。-->
+    <bean id="sessionIdGenerator" class="org.apache.shiro.session.mgt.eis.JavaUuidSessionIdGenerator"/>
+
+    <!-- 会话DAO -->
+    <!-- EnterpriseCacheSessionDAO
+         提供了缓存功能的会话维护，默认情况下使用MapCache实现，
+         内部使用ConcurrentHashMap保存缓存的会话。
+    -->
+    <bean id="sessionDAO" class="org.apache.shiro.session.mgt.eis.EnterpriseCacheSessionDAO">
+        <!-- 设置session缓存的名字，这个名字可以任意 -->
+        <property name="activeSessionsCacheName" value="shiro-activeSessionCache"/>
+        <!-- 定义该Session DAO操作中所使用的ID生成器 -->
+        <property name="sessionIdGenerator" ref="sessionIdGenerator"/>
+    </bean>
+
+    <!-- 会话验证调度器 用于定期的验证会话是否已过期-->
+    <!-- QuartzSessionValidationScheduler ：使用Quartz会话验证调度器-->
+    <bean id="sessionValidationScheduler" class="org.apache.shiro.session.mgt.quartz.QuartzSessionValidationScheduler">
+        <!--sessionValidationInterval ：设置session的失效扫描间隔，单位为毫秒-->
+        <property name="sessionValidationInterval" value="1800000"/>
+        <!-- 随后还需要定义有一个会话管理器的程序类的引用 ： 即下面的配置 -->
+        <property name="sessionManager" ref="sessionManager"/>
+    </bean>
+
+    <!-- 会话管理器 -->
+    <!--
+        DefaultWebSessionManager：
+        替代ServletContainerSessionManager，自己维护着会话，直接废弃了容器的会话；
+        在Servlet容器中，默认使用JSESSIONID Cookie维护会话，且会话默认是跟容器绑定的；
+        在某些情况下可能需要使用自己的会话机制，此时我们可以使用DefaultWebSessionManager来维护会话：
+    -->
+    <bean id="sessionManager" class="org.apache.shiro.web.session.mgt.DefaultWebSessionManager">
+        <!-- 设置会话的全局过期时间（毫秒为单位），默认30分钟：-->
+        <property name="globalSessionTimeout" value="1800000"/>
+        <!-- 会话过期时不想删除过期的会话 可设置为false-->
+        <property name="deleteInvalidSessions" value="true"/>
+        <!-- 是否开启会话验证器，默认是开启的；-->
+        <property name="sessionValidationSchedulerEnabled" value="true"/>
+        <!-- 指向会话验证调度器 -->
+        <property name="sessionValidationScheduler" ref="sessionValidationScheduler"/>
+        <!-- 用于会话的CRUD -->
+        <property name="sessionDAO" ref="sessionDAO"/>
+    </bean>
+
+<!--========================================================================================-->
+
+
+    <!-- 安全管理器 -->
+    <bean id="securityManager" class="org.apache.shiro.web.mgt.DefaultWebSecurityManager">
+        <!--配置定义的realm 会话管理器-->
+        <property name="realm" ref="userRealm"/>
+        <property name="sessionManager" ref="sessionManager"/>
+    </bean>
+
+    <!-- 相当于调用SecurityUtils.setSecurityManager(securityManager) -->
+    <bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="staticMethod" value="org.apache.shiro.SecurityUtils.setSecurityManager"/>
+        <property name="arguments" ref="securityManager"/>
+    </bean>
+
+
+    <!--========================================================================================-->
+
+    <!-- 基于Form表单的身份验证过滤器 -->
+    <bean id="formAuthenticationFilter" class="org.apache.shiro.web.filter.authc.FormAuthenticationFilter">
+        <property name="usernameParam" value="username"/>
+        <property name="passwordParam" value="password"/>
+        <property name="loginUrl" value="/login"/>
+    </bean>
+
+    <!--自定义过滤器-->
+    <bean id="sysUserFilter" class="com.cug.lab.filter.SysUserFilter"/>
+
+    <!-- Shiro的Web过滤器 -->
+    <bean id="shiroFilter" class="org.apache.shiro.spring.web.ShiroFilterFactoryBean">
+        <property name="securityManager" ref="securityManager"/>
+        <property name="loginUrl" value="/login"/>
+        <property name="filters">
+            <util:map>
+                <entry key="authc" value-ref="formAuthenticationFilter"/>
+                <!--自定义的过滤器-->
+                <entry key="sysUser" value-ref="sysUserFilter"/>
+            </util:map>
+        </property>
+        <property name="filterChainDefinitions">
+            <value>
+                /login = anon
+                /logout = logout
+                /authenticated = anon
+                <!--所有的请求都要经过验证和满足自定的过滤器-->
+                /** = user,sysUser
+            </value>
+        </property>
+    </bean>
+
+   <!--&lt;!&ndash; Shiro生命周期处理器&ndash;&gt;
+        保证实现了Shiro内部lifecycle函数的bean执行 &ndash;&gt;
+    <bean id="lifecycleBeanPostProcessor" class="org.apache.shiro.spring.LifecycleBeanPostProcessor"/>-->
+
+
+</beans>

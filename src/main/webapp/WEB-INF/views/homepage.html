@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hello</title>
+</head>
+
+<body>
+
+<div class="error">欢迎 ：[ ${(user.username)!''} ]</div>
+<div class="error">角色 ：[ <#if roles??> <#list roles as role>${(role.description)!''} </#list></#if> ]</div>
+<a href="logout">[退出]</a>
+<hr/>
+
+<div class="error">menus ： </div>
+
+    <#if menus??>
+        <#list menus as menu>
+
+        <a href="${(menu.url)!''}" >${menu.name}</a> <br/>
+
+        </#list>
+    </#if>
+
+
+
+<hr/>
+
+
+
+<a href="admin" >admin</a><br>
+<a href="user" >user</a>
+</body>
+</html>
